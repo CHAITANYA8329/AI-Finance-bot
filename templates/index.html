@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Finance Advisor Bot | AI-Powered Wealth & Budget Planner</title>
+  <meta name="description" content="Personal Finance Advisor Bot - AI-powered financial planning assistant for income tracking, intelligent expense categorization, personalized budget generation, and health scoring.">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
+
+  <!-- Google Fonts & Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       APP HEADER & NAVIGATION
+       ========================================================================= -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">🤖</div>
+      <div class="brand-title">
+        <h1>Finance Advisor Bot</h1>
+        <div class="brand-tag">AI-Powered Financial Planning</div>
+      </div>
+    </div>
+
+    <!-- Quick Persona Pills Navigation -->
+    <div class="persona-selector">
+      <button class="persona-btn active" data-user-id="1" title="Salaried Professional Scenario">
+        💼 Salaried
+      </button>
+      <button class="persona-btn" data-user-id="2" title="College Student Scenario">
+        🎓 Student
+      </button>
+      <button class="persona-btn" data-user-id="3" title="Freelancer Scenario">
+        🎨 Freelancer
+      </button>
+      <button class="persona-btn" data-user-id="4" title="Household Manager Scenario">
+        🏡 Household
+      </button>
+    </div>
+
+    <div class="header-actions">
+      <!-- Health Badge Indicator -->
+      <div class="health-badge-header" id="btnOpenReport" title="View Full Monthly Statement">
+        <div class="health-dot"></div>
+        <span class="health-badge-text" id="headerHealthScore">Health: --/100</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <button class="btn btn-outline" id="btnOpenGeminiSettings" title="Configure Gemini AI Key">
+        ✨ Gemini AI
+      </button>
+      <button class="btn btn-primary" id="btnOpenReport">
+        📄 Monthly Report
+      </button>
+      <button class="btn btn-outline" id="btnResetData" title="Reset all scenarios to default">
+        🔄 Reset
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       MAIN DASHBOARD WRAPPER
+       ========================================================================= -->
+  <main class="main-wrapper">
+
+    <!-- Active Persona Context Banner -->
+    <div class="persona-context-banner">
+      <div class="banner-content">
+        <span class="banner-badge" id="bannerPersona">SALARIED</span>
+        <div class="banner-text">
+          Active Profile: <strong id="bannerUserName">Rahul Sharma</strong> — 
+          <span id="bannerDescription">Salaried Professional: tracking monthly salary, rent, food, transport, and curtailing weekend entertainment overruns.</span>
+        </div>
+      </div>
+      <div>
+        <button class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.8rem;" id="btnOpenCreateUser">
+          + Custom Profile
+        </button>
+      </div>
+    </div>
+
+    <!-- Top Key Metrics Cards -->
+    <section class="metrics-grid">
+      <!-- Metric 1: Total Inflows -->
+      <div class="metric-card income glass-panel">
+        <div class="metric-header">
+          <span class="metric-title">Total Inflows</span>
+          <div class="metric-icon">💰</div>
+        </div>
+        <div class="metric-value" id="metricTotalIncome">₹0</div>
+        <div class="metric-sub">
+          <span>Active earnings & stipend</span>
+        </div>
+      </div>
+
+      <!-- Metric 2: Total Outflows -->
+      <div class="metric-card expense glass-panel">
+        <div class="metric-header">
+          <span class="metric-title">Total Outflows</span>
+          <div class="metric-icon">📉</div>
+        </div>
+        <div class="metric-value" id="metricTotalExpense">₹0</div>
+        <div class="metric-sub">
+          <span>Essential: <span class="highlight" id="metricEssentialSpending">₹0</span></span>
+        </div>
+      </div>
+
+      <!-- Metric 3: Net Savings -->
+      <div class="metric-card savings glass-panel">
+        <div class="metric-header">
+          <span class="metric-title">Net Savings</span>
+          <div class="metric-icon">💎</div>
+        </div>
+        <div class="metric-value" id="metricNetSavings">₹0</div>
+        <div class="metric-sub">
+          <span>Savings Rate: <span class="highlight" id="metricSavingsRate">0%</span></span>
+        </div>
+      </div>
+
+      <!-- Metric 4: Emergency Runway -->
+      <div class="metric-card runway glass-panel">
+        <div class="metric-header">
+          <span class="metric-title">Safety Runway</span>
+          <div class="metric-icon">🛡️</div>
+        </div>
+        <div class="metric-value" id="metricRunway">0.0 Mo</div>
+        <div class="metric-sub">
+          <span>Emergency reserve cushion</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-link active" data-tab="tab-analytics">📊 Dashboard & Analytics</button>
+      <button class="tab-link" data-tab="tab-incomes">💵 Income Streams</button>
+      <button class="tab-link" data-tab="tab-expenses">💳 Expenses Tracker</button>
+      <button class="tab-link" data-tab="tab-budgets">🎯 Budget Planner</button>
+      <button class="tab-link" data-tab="tab-goals">🏆 Savings Goals</button>
+      <button class="tab-link" data-tab="tab-scenarios">🧪 Scenarios Playground</button>
+    </nav>
+
+    <!-- =======================================================================
+         TAB 1: DASHBOARD & ANALYTICS
+         ======================================================================= -->
+    <section class="tab-content active" id="tab-analytics">
+      
+      <!-- Overspending Alerts Banner Section -->
+      <div class="alerts-section" id="alertsContainer"></div>
+
+      <!-- Top Analytics Row: Charts & Financial Health Gauge -->
+      <div class="analytics-grid">
+        
+        <!-- Left Column: Comparison Bar & Category Doughnut -->
+        <div class="glass-panel chart-card">
+          <div class="card-title-bar">
+            <h3>📈 Monthly Cashflow & Category Breakdown</h3>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Real-time Ledger Analysis</div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div>
+              <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">INFLOWS VS OUTFLOWS</div>
+              <div class="chart-container">
+                <canvas id="incomeExpenseChart"></canvas>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">EXPENSE BY CATEGORY</div>
+              <div class="chart-container">
+                <canvas id="categoryDoughnutChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: AI Financial Health Score Widget -->
+        <div class="glass-panel health-score-widget">
+          <div>
+            <div class="card-title-bar">
+              <h3>🩺 Financial Health</h3>
+              <span style="font-size: 0.75rem; color: var(--accent-ai-cyan);">AI Engine</span>
+            </div>
+
+            <!-- Radial Gauge -->
+            <div class="gauge-wrapper">
+              <svg class="gauge-circle" viewBox="0 0 160 160">
+                <circle class="gauge-bg" cx="80" cy="80" r="70"></circle>
+                <circle class="gauge-progress" id="gaugeCircleProgress" cx="80" cy="80" r="70"></circle>
+              </svg>
+              <div class="gauge-label-inner">
+                <div class="gauge-num" id="gaugeScoreNum">0</div>
+                <div class="gauge-max">/ 100</div>
+              </div>
+            </div>
+
+            <div class="health-status-badge" id="healthStatusBadge">Evaluating...</div>
+            <p class="health-summary-text" id="healthSummaryText">Analyzing transactions...</p>
+          </div>
+
+          <!-- Component Progress Bars -->
+          <div class="health-breakdown-bars">
+            <div class="mini-bar-row">
+              <span>Savings Velocity (35pts)</span>
+              <div class="mini-bar-track"><div class="mini-bar-fill" id="barSavings" style="width: 50%;"></div></div>
+            </div>
+            <div class="mini-bar-row">
+              <span>Spending Discipline (30pts)</span>
+              <div class="mini-bar-track"><div class="mini-bar-fill" id="barSpending" style="width: 50%;"></div></div>
+            </div>
+            <div class="mini-bar-row">
+              <span>Essential Ratio (20pts)</span>
+              <div class="mini-bar-track"><div class="mini-bar-fill" id="barEssential" style="width: 50%;"></div></div>
+            </div>
+            <div class="mini-bar-row">
+              <span>Goals Runway (15pts)</span>
+              <div class="mini-bar-track"><div class="mini-bar-fill" id="barGoals" style="width: 50%;"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Analytics Row: Active Category Budget Utilization -->
+      <div class="glass-panel" style="padding: 1.5rem;">
+        <div class="card-title-bar">
+          <h3>🎯 Budget Allocation & Spending Meters</h3>
+          <button class="btn btn-outline" style="font-size: 0.78rem; padding: 0.35rem 0.8rem;" id="btnAutoBudget">
+            ⚡ Auto-Generate AI Budget
+          </button>
+        </div>
+        <div class="category-bars-grid" id="budgetBarsContainer">
+          <!-- Dynamic Category Progress Bars -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- =======================================================================
+         TAB 2: INCOMES MANAGER
+         ======================================================================= -->
+    <section class="tab-content" id="tab-incomes">
+      <div class="glass-panel" style="padding: 1.5rem;">
+        <div class="card-title-bar">
+          <div>
+            <h3>💵 Income Streams & Inflows</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Record monthly salary, freelance projects, allowances, and investments.</p>
+          </div>
+          <button class="btn btn-success" id="btnOpenAddIncome">
+            + Log Income
+          </button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Source / Client</th>
+                <th>Category</th>
+                <th>Frequency</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="incomeTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 3: EXPENSES TRACKER
+         ======================================================================= -->
+    <section class="tab-content" id="tab-expenses">
+      <div class="glass-panel" style="padding: 1.5rem;">
+        <div class="card-title-bar">
+          <div>
+            <h3>💳 Expense Logs & Categorization</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Track daily expenditures with automatic essential vs discretionary tags.</p>
+          </div>
+          <button class="btn btn-primary" id="btnOpenAddExpense">
+            + Log Expense
+          </button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Expense Item</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="expenseTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 4: BUDGET PLANNER
+         ======================================================================= -->
+    <section class="tab-content" id="tab-budgets">
+      <div class="glass-panel" style="padding: 1.5rem;">
+        <div class="card-title-bar">
+          <div>
+            <h3>🎯 Category Budget Limits & Variance</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Enforce disciplined spending thresholds to avoid month-end deficits.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-outline" onclick="autoGenerateBudget()">
+              ⚡ AI Auto-Plan
+            </button>
+            <button class="btn btn-primary" id="btnOpenAddBudget">
+              + Set Budget Limit
+            </button>
+          </div>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Monthly Limit</th>
+                <th>Actual Spent</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="budgetTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 5: SAVINGS GOALS
+         ======================================================================= -->
+    <section class="tab-content" id="tab-goals">
+      <div class="card-title-bar" style="margin-bottom: 1.5rem;">
+        <div>
+          <h3>🏆 Savings Targets & Emergency Funds</h3>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Track emergency reserve runway, asset acquisitions, and milestone savings.</p>
+        </div>
+        <button class="btn btn-primary" id="btnOpenAddGoal">
+          + Add New Goal
+        </button>
+      </div>
+
+      <div class="goals-grid" id="goalsContainer">
+        <!-- Dynamically populated goal cards -->
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 6: SCENARIOS PLAYGROUND
+         ======================================================================= -->
+    <section class="tab-content" id="tab-scenarios">
+      <div class="card-title-bar" style="margin-bottom: 1.5rem;">
+        <div>
+          <h3>🧪 Pre-Configured Test Scenarios</h3>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Select any of the 4 benchmark profiles to immediately test AI behavior, budget allocations, and health scores.</p>
+        </div>
+      </div>
+
+      <div class="scenarios-grid">
+        <!-- Scenario 1 -->
+        <div class="scenario-card glass-panel salaried" data-user-id="1">
+          <span class="scenario-badge">Scenario 1</span>
+          <h4 class="scenario-name">Rahul Sharma (Salaried)</h4>
+          <p class="scenario-desc">
+            Earns ₹80k monthly. Has overspending in Entertainment & Weekend dining (₹14.8k vs ₹8.5k budget). Tests 50/30/20 budget generation and leak reduction.
+          </p>
+          <div style="font-size: 0.78rem; color: var(--accent-ai); font-weight: 600;">Click to Activate Scenario →</div>
+        </div>
+
+        <!-- Scenario 2 -->
+        <div class="scenario-card glass-panel student" data-user-id="2">
+          <span class="scenario-badge">Scenario 2</span>
+          <h4 class="scenario-name">Ananya Verma (Student)</h4>
+          <p class="scenario-desc">
+            Manages a ₹15k monthly allowance. Juggles mess food, textbooks, and cafe social outings while saving towards a coding laptop upgrade fund.
+          </p>
+          <div style="font-size: 0.78rem; color: var(--accent-income); font-weight: 600;">Click to Activate Scenario →</div>
+        </div>
+
+        <!-- Scenario 3 -->
+        <div class="scenario-card glass-panel freelancer" data-user-id="3">
+          <span class="scenario-badge">Scenario 3</span>
+          <h4 class="scenario-name">Vikram Roy (Freelancer)</h4>
+          <p class="scenario-desc">
+            Fluctuating earnings across multiple clients (₹102k this month). Prioritizes building a 6-month lean emergency runway for slow invoice cycles.
+          </p>
+          <div style="font-size: 0.78rem; color: var(--accent-warning); font-weight: 600;">Click to Activate Scenario →</div>
+        </div>
+
+        <!-- Scenario 4 -->
+        <div class="scenario-card glass-panel household" data-user-id="4">
+          <span class="scenario-badge">Scenario 4</span>
+          <h4 class="scenario-name">Sunita Pawar (Household)</h4>
+          <p class="scenario-desc">
+            Manages ₹130k shared family income across bulk groceries, children tuition fees, peak utility bills, and family health contingencies.
+          </p>
+          <div style="font-size: 0.78rem; color: #f472b6; font-weight: 600;">Click to Activate Scenario →</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       AI FINANCIAL ADVISOR CHATBOT DRAWER
+       ========================================================================= -->
+  <button class="chat-drawer-trigger" id="chatDrawerTrigger" title="Chat with AI Financial Advisor">
+    <span>✨</span> AI Financial Advisor
+  </button>
+
+  <div class="chat-drawer" id="chatDrawer">
+    <div class="chat-header">
+      <div class="chat-bot-info">
+        <div class="bot-avatar">💎</div>
+        <div class="bot-title">
+          <h4>Finance Advisor AI</h4>
+          <div class="bot-status">
+            <span class="bot-status-dot"></span>
+            Online & Ready
+          </div>
+        </div>
+      </div>
+      <button class="chat-close-btn" id="chatCloseBtn">&times;</button>
+    </div>
+
+    <!-- Quick Prompt Suggestion Chips -->
+    <div class="chat-prompt-chips">
+      <button class="chip-btn" data-prompt="Analyze my spending and highlight where I am overspending.">⚠️ Overspending</button>
+      <button class="chip-btn" data-prompt="Generate a personalized monthly budget plan for my persona.">📊 Budget Plan</button>
+      <button class="chip-btn" data-prompt="How should I structure my emergency fund and runway?">🛡️ Emergency Fund</button>
+      <button class="chip-btn" data-prompt="What is my financial health score and how can I boost it?">🩺 Health Score</button>
+    </div>
+
+    <!-- Chat Stream Area -->
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-bubble bot">
+        <p>Hello! I am your <strong>Personal Finance Advisor Bot</strong>. Ask me anything about your cashflow, budget optimization, or emergency fund strategy!</p>
+      </div>
+    </div>
+
+    <!-- Chat Input Area -->
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Ask AI: e.g. How to save ₹5000 this month?..." />
+      <button class="btn btn-primary" id="chatSendBtn" style="padding: 0.6rem 0.9rem;">
+        Send
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODALS
+       ========================================================================= -->
+
+  <!-- Modal: Add Income -->
+  <div class="modal-overlay" id="modalAddIncome">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Log Income Entry</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form id="formAddIncome">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Source / Description *</label>
+            <input type="text" class="form-control" id="incomeSource" placeholder="e.g. Monthly Salary, Client Milestone..." required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Amount (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="incomeAmount" placeholder="50000" required />
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" class="form-control" id="incomeDate" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category</label>
+              <select class="form-control" id="incomeCategory">
+                <option value="Salary">Salary</option>
+                <option value="Freelance">Freelance / Contract</option>
+                <option value="Allowance">Allowance</option>
+                <option value="Investment">Investment / Dividend</option>
+                <option value="Bonus">Bonus</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Frequency</label>
+              <select class="form-control" id="incomeFrequency">
+                <option value="Monthly">Monthly</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Project-based">Project-based</option>
+                <option value="One-time">One-time</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes (Optional)</label>
+            <input type="text" class="form-control" id="incomeNotes" placeholder="Additional details..." />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close">Cancel</button>
+          <button type="submit" class="btn btn-success">Save Income</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Expense -->
+  <div class="modal-overlay" id="modalAddExpense">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Log New Expense</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form id="formAddExpense">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Title / Description *</label>
+            <input type="text" class="form-control" id="expenseTitle" placeholder="e.g. Grocery Supermarket, Uber Commute..." required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Amount (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="expenseAmount" placeholder="1500" required />
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" class="form-control" id="expenseDate" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select class="form-control" id="expenseCategory" required>
+              <option value="Rent & Housing">Rent & Housing</option>
+              <option value="Food & Groceries">Food & Groceries</option>
+              <option value="Transport & Fuel">Transport & Fuel</option>
+              <option value="Utilities">Utilities & Bills</option>
+              <option value="Entertainment & Dining Out">Entertainment & Dining Out</option>
+              <option value="Education">Education</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Subscriptions">Subscriptions</option>
+              <option value="Shopping">Shopping & Apparel</option>
+              <option value="Miscellaneous">Miscellaneous</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-check">
+              <input type="checkbox" id="expenseEssential" checked />
+              <span>Mark as Essential (Needs vs Wants classification)</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label>Notes (Optional)</label>
+            <input type="text" class="form-control" id="expenseNotes" placeholder="Context or tags..." />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Set Budget -->
+  <div class="modal-overlay" id="modalAddBudget">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Configure Category Budget</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form id="formAddBudget">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Category *</label>
+            <select class="form-control" id="budgetCategory" required>
+              <option value="Rent & Housing">Rent & Housing</option>
+              <option value="Food & Groceries">Food & Groceries</option>
+              <option value="Transport & Fuel">Transport & Fuel</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Entertainment & Dining Out">Entertainment & Dining Out</option>
+              <option value="Education">Education</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Subscriptions">Subscriptions</option>
+              <option value="Shopping">Shopping</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Monthly Spending Limit (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="budgetLimit" placeholder="10000" required />
+            </div>
+            <div class="form-group">
+              <label>Alert Threshold (%)</label>
+              <input type="number" class="form-control" id="budgetThreshold" value="85" min="50" max="100" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Budget</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Goal -->
+  <div class="modal-overlay" id="modalAddGoal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Create Savings Target</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form id="formAddGoal">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Goal Title *</label>
+            <input type="text" class="form-control" id="goalTitle" placeholder="e.g. 6-Month Emergency Cushion, Laptop..." required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Target Amount (₹) *</label>
+              <input type="number" step="0.01" class="form-control" id="goalTarget" placeholder="100000" required />
+            </div>
+            <div class="form-group">
+              <label>Current Saved (₹)</label>
+              <input type="number" step="0.01" class="form-control" id="goalCurrent" placeholder="10000" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category</label>
+              <select class="form-control" id="goalCategory">
+                <option value="Emergency Fund">Emergency Fund</option>
+                <option value="Travel/Vacation">Travel / Vacation</option>
+                <option value="Gadget/Asset">Gadget / Tech Asset</option>
+                <option value="Education">Education</option>
+                <option value="Investment">Investment</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Target Date</label>
+              <input type="date" class="form-control" id="goalDate" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Deposit into Goal -->
+  <div class="modal-overlay" id="modalDepositGoal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="depositGoalTitle">Deposit into Goal</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form id="formDepositGoal">
+        <input type="hidden" id="depositGoalId" />
+        <div class="modal-body">
+          <div style="font-size: 0.85rem; color: var(--accent-ai-cyan); margin-bottom: 1rem;" id="depositGoalRemaining">Remaining: ₹0</div>
+          <div class="form-group">
+            <label>Deposit Amount (₹) *</label>
+            <input type="number" step="0.01" class="form-control" id="depositAmount" placeholder="5000" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm Deposit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Gemini AI Configuration -->
+  <div class="modal-overlay" id="modalGeminiSettings">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>✨ Gemini AI Configuration</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form id="formGeminiKey">
+        <div class="modal-body">
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            The Personal Finance Advisor Bot operates in a <strong>dual hybrid mode</strong>: it features a built-in Financial Intelligence Rules Engine that operates 100% out of the box, and seamlessly upgrades to live Google Gemini 1.5 Flash when an API key is provided!
+          </p>
+          <div class="form-group">
+            <label>Gemini API Key</label>
+            <input type="password" class="form-control" id="geminiApiKeyInput" placeholder="AIzaSy..." />
+          </div>
+          <div id="geminiStatusMsg" style="font-size: 0.82rem; margin-top: 0.5rem;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close">Close</button>
+          <button type="submit" class="btn btn-primary">Save API Key</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Create Custom User -->
+  <div class="modal-overlay" id="modalCreateUser">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Create Custom Financial Profile</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form id="formCreateUser">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" class="form-control" id="createFullName" placeholder="e.g. Chaitanya Pawar" required />
+            </div>
+            <div class="form-group">
+              <label>Username *</label>
+              <input type="text" class="form-control" id="createUsername" placeholder="chaitanya_pawar" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" class="form-control" id="createEmail" placeholder="chaitanya@example.com" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Persona Archetype</label>
+              <select class="form-control" id="createPersona">
+                <option value="salaried">Salaried Professional</option>
+                <option value="student">College Student</option>
+                <option value="freelancer">Freelancer / Consultant</option>
+                <option value="household">Household Manager</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Currency Symbol</label>
+              <select class="form-control" id="createCurrency">
+                <option value="₹">₹ (INR)</option>
+                <option value="$">$ (USD)</option>
+                <option value="€">€ (EUR)</option>
+                <option value="£">£ (GBP)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Target Monthly Income</label>
+            <input type="number" step="0.01" class="form-control" id="createIncomeTarget" placeholder="60000" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Comprehensive Monthly Report -->
+  <div class="modal-overlay" id="modalMonthlyReport">
+    <div class="modal-window report-modal">
+      <div class="modal-header">
+        <h3>Monthly Financial Statement Report</h3>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;" onclick="window.print()">
+            🖨️ Print / Save PDF
+          </button>
+          <button class="modal-close">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" id="reportModalBody">
+        <!-- Dynamically rendered financial statement -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
